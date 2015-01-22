@@ -6,7 +6,7 @@
 #include <errno.h>
 #include <math.h>
 
-// todo do s6 notifywhenup protocoll
+// todo do s6 notifywhenup protocol
 
 #define GROUPID 65534
 #define USERID 65534
