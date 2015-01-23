@@ -11,17 +11,17 @@
 #include <sys/stat.h>
 
 // set uid/guid to monky/readproc
-//#define USERID 113
-//#define GROUPID 30
+#define USERID 113
+#define GROUPID 30
 // set uid/guid to nobody
-#define USERID 65534
-#define GROUPID 65534
+//#define USERID 65534
+//#define GROUPID 65534
 
 // max values for hgram
 #define MAX_ENT 3000       // max entropy of system
 #define MAX_DSK 100*1024   // max speed of disk (in kB/s)
 #define MAX_UP 400         // max net uplink speed (in kB/s)
-#define MAX_DOWN 1024      // max net downlink speed (in kB/s)
+#define MAX_DOWN 5*1024    // max net downlink speed (in kB/s)
 #define MAX_TMP 95         // max cpu temp
 
 // amount of history to keep
@@ -304,27 +304,28 @@ void net(char* dev) {
   fprintf(out, "d:%s %5.1fkB/s ", hgram(tbar, 128, down_samples, down_samples_idx, (float) MAX_DOWN, (float) 0), down);
 }
 
-void lock_seccomp(void) {
-  // todo handle fds via array of opened fds more specifically
+void lock_seccomp(int fds[], size_t fdsize, int out) {
   // Init the filter
+  int i;
   scmp_filter_ctx ctx;
   ctx = seccomp_init(SCMP_ACT_KILL); // default action: kill
 
 #if __x86_64__
   //readv([3,4,5,6,7,8,9]
-  seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(readv), 1,
-                        SCMP_A0(SCMP_CMP_LT, 11));
+  for(i=0;i<fdsize;i++) seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(readv), 1,
+                                              SCMP_A0(SCMP_CMP_EQ, fds[i]));
   //lseek([3,4,5,6,7,8,9], 0, [0], SEEK_SET
+  for(i=0;i<fdsize;i++) seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(lseek), 1,
+                                              SCMP_A0(SCMP_CMP_EQ, fds[i]));
+  //lseek(out
   seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(lseek), 1,
-                        SCMP_A0(SCMP_CMP_LT, 11));
+                        SCMP_A0(SCMP_CMP_EQ, out));
   //ioctl(out
   seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(ioctl), 1,
-                        SCMP_A0(SCMP_CMP_EQ, 1));
+                        SCMP_A0(SCMP_CMP_EQ, out));
   //write(out
-  seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(writev), 0);
-  //ftruncate(out
-  seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(ftruncate), 0);
-
+  seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(writev), 1,
+                        SCMP_A0(SCMP_CMP_EQ, out));
 #else //__x86_64__
   //rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
   seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(rt_sigprocmask), 3,
@@ -348,25 +349,31 @@ void lock_seccomp(void) {
   seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(brk), 0);
 
   //read([3,4,5,6,7,8,9]
-  seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(read), 1,
-                        SCMP_A0(SCMP_CMP_LT, 10));
+  for(i=0;i<fdsize;i++) seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(read), 1,
+                                              SCMP_A0(SCMP_CMP_EQ, fds[i]));
 
   //_llseek([3,4,5,6,7,8,9], 0, [0], SEEK_SET
+  for(i=0;i<fdsize;i++) seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(_llseek), 1,
+                                              SCMP_A0(SCMP_CMP_EQ, fds[i]));
   seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(_llseek), 1,
-                        SCMP_A0(SCMP_CMP_LT, 10));
+                        SCMP_A0(SCMP_CMP_EQ, out));
 
   //fstat64([3,4,5,6,7,8,9], {st_mode=S_IFREG|0444, st_size=4096, ...}) = 0
+  for(i=0;i<fdsize;i++) seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(fstat64), 1,
+                                              SCMP_A0(SCMP_CMP_EQ, fds[i]));
+  //fstat(out
   seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(fstat64), 1,
-                        SCMP_A0(SCMP_CMP_LT, 10));
+                        SCMP_A0(SCMP_CMP_EQ, out));
 
   //write(1
   seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(write), 1,
-                        SCMP_A0(SCMP_CMP_EQ, 1));
+                        SCMP_A0(SCMP_CMP_EQ, out));
 #endif
-
+  //ftruncate(out
+  seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(ftruncate), 1,
+                        SCMP_A0(SCMP_CMP_EQ, out));
   //nanosleep({1, 0}
   seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(nanosleep), 0);
-
 
   // enable seccomp rules
   seccomp_load(ctx);
@@ -426,7 +433,8 @@ int main(int argc, char** argv) {
   }
 
   // also do seccomp lockdown
-  lock_seccomp();
+  int fds[]={fileno(tempfd), fileno(batfd), fileno(cpufd), fileno(memfd), fileno(dskfd), fileno(netfd), fileno(entfd)};
+  lock_seccomp(fds, 7, fileno(out));
 
   // run mainloop
   while(1) {
