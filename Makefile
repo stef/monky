@@ -1,12 +1,12 @@
-CFLAGS = -O3 -g -Wall -march=native -Werror -fPIC -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security
-LIBS = -lm
+CFLAGS = -g -Wall -march=native -Werror -fPIC -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security
+LIBS = -lseccomp
 LDFLAGS = -Wl,--gc-sections -Wl,-z,relro,-PIE -fPIC
 
-#objs = mon.o
+#objs = monky.o
 
-all : mon
+all : monky
 
-mon : mon.c $(objs)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o mon mon.c $(objs) $(LIBS)
-	sudo chown root.root mon 
-	sudo chmod u+s mon
+monky : monky.c $(objs)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o monky monky.c $(objs) $(LIBS)
+	sudo chown root.root monky
+	sudo chmod u+s monky
