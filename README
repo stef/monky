@@ -1,13 +1,9 @@
-system monitor for ANSI and TMUX terminals.
+framebuffer system monitor with truetype font handling, 32bit colors and
+histograms.
 
-ANSI mode run with:
+depends: freetype2, libseccomp (currently only with musl, check the makefile to enable it)
+
+run it like:
 ./mon sda eth1:
 
-TMUX mode:
-./mon sda eth1: /dev/shm/tmux-mon
-
-in tmux do:
-set-option -g status-right "#(tail -1 /dev/shm/tmux-mon)"
-and enjoy your mon-in-tmux.
-
-no configuration, stuff gets compiled, check the defines.
+no configuration, stuff gets compiled, check monky.c.
