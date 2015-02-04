@@ -1,7 +1,7 @@
 framebuffer system monitor with truetype font handling, 32bit colors and
 histograms.
 
-depends: freetype2, libseccomp (currently only with musl, check the makefile to enable it)
+depends: freetype2, libseccomp
 
 run it like:
 ./mon sda eth1:
