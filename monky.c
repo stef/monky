@@ -321,9 +321,6 @@ void lock_seccomp(const int fds[], const size_t fdsize, const int fbfd) {
   //lseek([3,4,5,6,7,8,9], 0, [0], SEEK_SET
   for(i=0;i<fdsize;i++) seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(lseek), 1,
                                               SCMP_A0(SCMP_CMP_EQ, fds[i]));
-  //ioctl(fbfd
-  seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(ioctl), 1,
-                        SCMP_A0(SCMP_CMP_EQ, fbfd));
 
   //mmap(NULL, 3145728, PROT_READ|PROT_WRITE, MAP_SHARED, 10, 0)
   seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(mmap), 1,
@@ -342,11 +339,6 @@ void lock_seccomp(const int fds[], const size_t fdsize, const int fbfd) {
   //close(11
   seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(close), 1,
                         SCMP_A0(SCMP_CMP_EQ, fbfd+1));
-
-  //ioctl(ttyfd, VT_GETSTATE, &vtstat
-  seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(ioctl), 2,
-                        SCMP_A0(SCMP_CMP_EQ, ttyfd),
-                        SCMP_A1(SCMP_CMP_EQ, VT_GETSTATE));
   //writev(1
   seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(writev), 1,
                         SCMP_A0(SCMP_CMP_EQ, 1));
@@ -382,6 +374,15 @@ void lock_seccomp(const int fds[], const size_t fdsize, const int fbfd) {
                                               SCMP_A0(SCMP_CMP_EQ, fds[i]));
 
 #endif
+
+  //ioctl(ttyfd, VT_GETSTATE, &vtstat
+  seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(ioctl), 2,
+                        SCMP_A0(SCMP_CMP_EQ, ttyfd),
+                        SCMP_A1(SCMP_CMP_EQ, VT_GETSTATE));
+
+  //ioctl(fbfd
+  seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(ioctl), 1,
+                        SCMP_A0(SCMP_CMP_EQ, fbfd));
 
   //nanosleep({1, 0}
   seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(nanosleep), 0);
@@ -479,14 +480,6 @@ int main(const int argc, const char** argv) {
 
   // run mainloop
   while(1) {
-    // left aligned
-    //cpu();
-    //mem();
-    //temp();
-    //bat();
-    //dsk(argv[1]);
-    //net(argv[2]);
-    //ent();
     // right aligned
     newline(-1, monky_y, BGCOLOR);
     ent();

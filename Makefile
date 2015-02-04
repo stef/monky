@@ -3,15 +3,12 @@ INCLUDES =  -I/usr/include/freetype2
 # for debugging
 #CFLAGS = -g -Wall -march=native -Werror -fPIC -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security  $(INCLUDES)
 
-# if you have musl, enable seccomp,
-# if you have glibc, port the seccomp rule to it.
-# thx!
-#LIBS = -lseccomp -lfreetype
-#CFLAGS = -O3 -Wall -march=native -Werror -fPIC -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security  $(INCLUDES)
+LIBS = -lseccomp -lfreetype
+CFLAGS = -O3 -Wall -march=native -Werror -fPIC -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security  $(INCLUDES)
 
 # for those without seccomp:
-LIBS = -lfreetype
-CFLAGS = -DWITHOUT_SECCOMP -O3 -Wall -march=native -Werror -fPIC -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security  $(INCLUDES)
+#LIBS = -lfreetype
+#CFLAGS = -DWITHOUT_SECCOMP -O3 -Wall -march=native -Werror -fPIC -fstack-protector --param=ssp-buffer-size=4 -Wformat -Werror=format-security  $(INCLUDES)
 
 LDFLAGS = -Wl,--gc-sections -Wl,-z,relro,-PIE -fPIC
 
