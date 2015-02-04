@@ -7,3 +7,5 @@ run it like:
 ./mon sda eth1:
 
 no configuration, stuff gets compiled, check monky.c.
+
+screenshot can be seen here: https://www.ctrlc.hu/~stef/monky.png
