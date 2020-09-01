@@ -214,7 +214,8 @@ void bat() {
   while(fgetc(batfd)!=EOF); // weird way of flushing /proc files
   if(max==0 || cur==0 || status==0) {
     printf("err: could not measure battery\n");
-    exit(1);
+    return;
+    //exit(1);
   }
   ret=((cur*100) / max);
   push(bat_samples, &bat_samples_idx, &batacc, ret);
@@ -346,7 +347,7 @@ void lock_seccomp(const int fds[], const size_t fdsize, const int fbfd) {
   //rt_sigprocmask(SIG_SETMASK, [], NULL, 8) = 0
   seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(rt_sigprocmask), 3,
                         SCMP_A0(SCMP_CMP_EQ, SIG_SETMASK),
-                        SCMP_A2(SCMP_CMP_EQ, NULL),
+                        SCMP_A2(SCMP_CMP_EQ, 0),
                         SCMP_A3(SCMP_CMP_EQ, 8));
   //rt_sigprocmask(SIG_BLOCK, [CHLD], [], 8) = 0
   seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(rt_sigprocmask), 2,
@@ -355,7 +356,7 @@ void lock_seccomp(const int fds[], const size_t fdsize, const int fbfd) {
   //rt_sigaction(SIGCHLD, NULL, {SIG_DFL, [], 0}, 8) = 0
   seccomp_rule_add(ctx, SCMP_ACT_ALLOW, SCMP_SYS(rt_sigaction), 3,
                         SCMP_A0(SCMP_CMP_EQ, SIGCHLD),
-                        SCMP_A1(SCMP_CMP_EQ, NULL),
+                        SCMP_A1(SCMP_CMP_EQ, 0),
                         SCMP_A3(SCMP_CMP_EQ, 8));
 
   //mmap2(NULL, 4096, PROT_READ|PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0)
